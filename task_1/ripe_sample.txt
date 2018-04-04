@@ -1,0 +1,44 @@
+212.193.82.20
+% Note: this output has been filtered.
+%       To receive output for a database update, use the "-B" flag.
+
+% Information related to '212.193.80.0 - 212.193.83.255'
+
+% Abuse contact for '212.193.80.0 - 212.193.83.255' is 'ip-box@ripn.net'
+
+inetnum:        212.193.80.0 - 212.193.83.255
+netname:        SERVICES-NET
+descr:          URFU, Network for services S. Kovalevskoy 5
+descr:          Yekaterinburg, Russia
+country:        RU
+admin-c:        UN1597-RIPE
+tech-c:         UN1597-RIPE
+status:         ASSIGNED PA
+mnt-by:         ROSNIIROS-MNT
+mnt-routes:     ROSNIIROS-MNT
+created:        2016-07-11T08:34:38Z
+last-modified:  2016-07-11T08:34:38Z
+source:         RIPE
+
+role:           URFU NOC
+address:        620083, Ekaterinburg, Turgeneva, 4
+admin-c:        PV6634-RIPE
+tech-c:         PV6634-RIPE
+abuse-mailbox:  p.a.varankin@urfu.ru
+nic-hdl:        UN1597-RIPE
+mnt-by:         URFU-MNT
+created:        2016-07-07T10:24:54Z
+last-modified:  2016-08-08T05:56:10Z
+source:         RIPE # Filtered
+
+% Information related to '212.193.80.0/22AS5468'
+
+route:          212.193.80.0/22
+descr:          URFU, services S.Kovalevskoy 5
+origin:         AS5468
+mnt-by:         URFU-MNT
+created:        2016-08-05T07:51:36Z
+last-modified:  2016-08-05T07:51:36Z
+source:         RIPE
+
+% This query was served by the RIPE Database Query Service version 1.90 (BLAARKOP)
