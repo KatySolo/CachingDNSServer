@@ -2,7 +2,8 @@ import binascii
 from task_2.database import queries_db
 
 
-
+class SuspiciousDNSError (Exception):
+    pass
 
 class DNSPackage:
 
@@ -32,15 +33,14 @@ class DNSPackage:
         question = self.QUESTION_BLOCK.createQuestion()
         return "".join((self.ID, self.QUERY_FLAGS, self.QDCOUNT, self.ANCOUNT, self.NSCOUNT, self.ARCOUNT,question)).replace(" ", "")
 
-    def createResponse(self, id):
+    def checkResponseValidity(self, id):
         try:
             self.QUESTION = queries_db[id]
-            # self.QTYPE = None
-            # self.QCLASS = None
         except LookupError as e:
-            print('no query with this id is existing')
+            return False
+        return True
 
-
+    def createResponse(self):
         self.QUERIES = [{} for i in range(self.QDCOUNT)] # todo add Questions types
         self.ANSWERS = [{} for i in range(self.ANCOUNT)]
         self.AUTHORITY_RECORDS = [{} for i in range(self.NSCOUNT)]
@@ -78,7 +78,6 @@ class Question:
         return "".join((self.QNAME, self.QTYPE, self.QCLASS))
 
 class Answer:
-
     def __init__(self):
         pass
 
@@ -157,4 +156,4 @@ def extaract_address(response, address):
 
 def generate_id():
     all_keys = set(queries_db.keys())
-    return str(max(all_keys) + 1).zfill(4)
+    return str(hex(max(all_keys) + 1))[2:].zfill(4)

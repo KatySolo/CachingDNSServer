@@ -4,7 +4,7 @@ import unicodedata
 
 import re
 
-from task_2.DNSPackage import DNSPackage
+from task_2.DNSPackage import DNSPackage, SuspiciousDNSError
 
 dns_cache = []
 question_len = 0
@@ -36,9 +36,12 @@ def parse_response(response_data):
     :return: none
     """
     id = response_data[:4]
-    response = DNSPackage().createResponse(id)
+    response = DNSPackage()
+    validResponse = response.checkResponseValidity(id)
 
-    # dns_cache.append(response)
+    if not validResponse:
+        raise SuspiciousDNSError("Suspicious response. Probably, server was hacked.")
+
     response.ID = id
     response.RESPONSE_FLAGS = response_data[4:8]
     response.QDCOUNT = int(response_data[8:12], 16)
@@ -78,7 +81,10 @@ def parse_response(response_data):
         print('address = ',ADDRESS)
 
     # print (ID,RESPONSE_FLAGS,QDCOUNT,ANCOUNT,NSCOUNT,ARCOUNT, QUESTION, QTYPE, QCLASS)
+try:
+    response = send_dns_query("example.com", "8.8.8.8")
+    print(response)
+except OSError as e:
+    print ('INTERNETA NETY')
 
-response = send_dns_query("example.com", "8.8.8.8")
-print (response)
 # new_data = parse_response(response)
