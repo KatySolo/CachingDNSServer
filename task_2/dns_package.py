@@ -1,29 +1,13 @@
 import binascii
 import socket
 import unicodedata
+import DNSPackage
 
 import re
 
 query_db = []
 question_len = 0
 
-def code_address(message):
-    """
-    Кодирует адрес для отправки запроса
-    :param message: адрес для колирования
-    :return: закодированный адрес
-    """
-    splitted_msg = message.split('.')
-    result = ""
-    for p in splitted_msg:
-        part_len = str(hex(len(p)))
-        result += part_len[2:].zfill(2)
-        for b in p:
-            result += str((binascii.hexlify(bytes(b,encoding='utf-8'))))[2:-1]
-    result += '00'
-    global question_len
-    question_len = len(result)
-    return result
 
 def decode_address(message):
     """
@@ -56,6 +40,7 @@ def decode_ip_address(param):
     return ".".join(result)
     pass
 
+
 def send_udp_message(message, address):
     """
     Метод для отсылки DNS запроса
@@ -63,18 +48,20 @@ def send_udp_message(message, address):
     :param address: адрес DNS сервера
     :return: полученный от DNS сервера ответ
     """
-    ID = 'aa aa'
-    QUERY_FLAGS = '01 00'
-    QDCOUNT = "00 01"
-    ANCOUNT = "00 00"
-    NSCOUNT = "00 00"
-    ARCOUNT = "00 00"
 
-    QNAME = code_address(message)
-    QTYPE = "00 01"
-    QCLASS = "00 01"
+    query = new DNSPackage()
+    # ID = 'aa aa'
+    # QUERY_FLAGS = '01 00'
+    # QDCOUNT = "00 01"
+    # ANCOUNT = "00 00"
+    # NSCOUNT = "00 00"
+    # ARCOUNT = "00 00"
+    #
+    # QNAME = code_address(message)
+    # QTYPE = "00 01"
+    # QCLASS = "00 01"
 
-    query_db.append((ID, {message:""}))
+    # query_db.append((ID, {message:""}))
     message = "".join((ID,QUERY_FLAGS,QDCOUNT,ANCOUNT,NSCOUNT,ARCOUNT,QNAME,QTYPE,QCLASS)).replace(" ","")
     server_address = (address, 53)
 
