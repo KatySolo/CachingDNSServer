@@ -8,6 +8,11 @@ query_db = []
 question_len = 0
 
 def code_address(message):
+    """
+    Кодирует адрес для отправки запроса
+    :param message: адрес для колирования
+    :return: закодированный адрес
+    """
     splitted_msg = message.split('.')
     result = ""
     for p in splitted_msg:
@@ -21,6 +26,11 @@ def code_address(message):
     return result
 
 def decode_address(message):
+    """
+    Декодирует из ответа из 16тиричного представления в строку
+    :param message: закодированное сообщение
+    :return: адрес из ответа
+    """
     result = [int(message[i:i+2],16) for i in range(0, len(message), 2)]
     result_str = ''
     start_pos = 0
@@ -37,11 +47,22 @@ def decode_address(message):
     return result_str
 
 def decode_ip_address(param):
+    """
+    Декодирование IP адреса из 16тиричного представление
+    :param param: адрес ввиде последовательности 16тиричной
+    :return: IPv4 адрес строкой
+    """
     result = [str(int(param[i:i + 2], 16)) for i in range(0, len(param), 2)]
     return ".".join(result)
     pass
 
-def send_udp_message(message, address, port):
+def send_udp_message(message, address):
+    """
+    Метод для отсылки DNS запроса
+    :param message: искомый адрес
+    :param address: адрес DNS сервера
+    :return: полученный от DNS сервера ответ
+    """
     ID = 'aa aa'
     QUERY_FLAGS = '01 00'
     QDCOUNT = "00 01"
@@ -55,7 +76,7 @@ def send_udp_message(message, address, port):
 
     query_db.append((ID, {message:""}))
     message = "".join((ID,QUERY_FLAGS,QDCOUNT,ANCOUNT,NSCOUNT,ARCOUNT,QNAME,QTYPE,QCLASS)).replace(" ","")
-    server_address = (address, port)
+    server_address = (address, 53)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -65,12 +86,13 @@ def send_udp_message(message, address, port):
         sock.close()
     return binascii.hexlify(data).decode("utf-8")
 
-
-
-
-
 def extaract_address(response, address):
-    response_address = ''
+    """
+    Метод извлечения адреса из ответа
+    :param response: полный ответ от сервера
+    :param address: адрес или ссылка на него в 16тиричном формате
+    :return: адрес IPv4 в виде строки
+    """
     valuable_bits = bin(int(address[:2], 16))[2:]
     if  valuable_bits[:2] == '11':
         link_str = valuable_bits[2:] + bin(int(address[2:], 16))[2:]
@@ -88,6 +110,11 @@ def extaract_address(response, address):
         return name
 
 def parse_response(response):
+    """
+    Метод разблра ответа от DNS сервера
+    :param response: ответ от сервера в 16тиричном представлении
+    :return: none
+    """
     ID = response[:4]
     RESPONSE_FLAGS = response[4:8]
     QDCOUNT = int(response[8:12],16)
@@ -126,5 +153,5 @@ def parse_response(response):
 # message = "AA AA 01 00 00 01 00 00 00 00 00 00 " \
 # "07 65 78 61 6d 70 6c 65 03 63 6f 6d 00 00 01 00 01"
 
-response = send_udp_message("ns1.vk.com","8.8.8.8", 53)
+response = send_udp_message("ns1.vk.com","8.8.8.8")
 new_data = parse_response(response)
