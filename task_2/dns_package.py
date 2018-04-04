@@ -23,23 +23,6 @@ def code_address(message):
 def decode_address(message):
     result = [int(message[i:i+2],16) for i in range(0, len(message), 2)]
     result_str = ''
-    # todo rewrite to domain tree
-    #todo FIX THIS PART
-
-    # for i in range(len(result)):
-    #     if result[i]>96:
-    #         result_str += chr(result[i])
-    #     elif i<0:
-    #         continue
-    #     else:
-    #         if result[i-1] > 96:
-    #             result_str +=
-
-
-    # return result_str[1:]
-    # print (result)
-    # print (ord('a'))
-    result_str = ''
     start_pos = 0
 
     while (True):
@@ -72,7 +55,6 @@ def send_udp_message(message, address, port):
 
     query_db.append((ID, {message:""}))
     message = "".join((ID,QUERY_FLAGS,QDCOUNT,ANCOUNT,NSCOUNT,ARCOUNT,QNAME,QTYPE,QCLASS)).replace(" ","")
-    # print (message)
     server_address = (address, port)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -105,11 +87,7 @@ def extaract_address(response, address):
         name = decode_address(address)
         return name
 
-    # print (address)
-
-
 def parse_response(response):
-    # print (response)
     ID = response[:4]
     RESPONSE_FLAGS = response[4:8]
     QDCOUNT = int(response[8:12],16)
@@ -143,31 +121,10 @@ def parse_response(response):
         ADDRESS = decode_ip_address(name_end[20:28])
         print('address = ',ADDRESS)
 
-        # print (TYPE,class_note,TTL,data_length,ADDRESS)
-
-        # RESPONSE_NAME = decode_response_name(response, )
-        # print (rest)
-
-
-
-
-
-
-
-
     # print (ID,RESPONSE_FLAGS,QDCOUNT,ANCOUNT,NSCOUNT,ARCOUNT, QUESTION, QTYPE, QCLASS)
-
-
-# def format_hex(hex):
-#     """format_hex returns a pretty version of a hex string"""
-#     octets = [hex[i:i+2] for i in range(0, len(hex), 2)]
-#     pairs = [" ".join(octets[i:i+2]) for i in range(0, len(octets), 2)]
-#     return "\n".join(pairs)
-
 
 # message = "AA AA 01 00 00 01 00 00 00 00 00 00 " \
 # "07 65 78 61 6d 70 6c 65 03 63 6f 6d 00 00 01 00 01"
 
 response = send_udp_message("ns1.vk.com","8.8.8.8", 53)
 new_data = parse_response(response)
-# print (response)
