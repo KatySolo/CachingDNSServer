@@ -5,6 +5,7 @@ from task_2.database import queries_db
 class SuspiciousDNSError (Exception):
     pass
 
+
 class DNSPackage:
 
     def __init__(self):
@@ -77,8 +78,16 @@ class Question:
     def createQuestion(self):
         return "".join((self.QNAME, self.QTYPE, self.QCLASS))
 
+    def getLength(self):
+        return len(self.QNAME + self.QTYPE + self.QCLASS)
+
 class Answer:
     def __init__(self):
+        self.NAME = ""
+        self.TYPE = ""
+        self.CLASS = ""
+        self.TTL = 0
+        self.ADDRESS = ""
         pass
 
 
@@ -121,38 +130,6 @@ def decode_address(message):
             result_str += '.'
 
     return result_str
-
-def decode_ip_address(address):
-    """
-    Декодирование IP адреса из 16тиричного представление
-    :param address: адрес ввиде последовательности 16тиричной
-    :return: IPv4 адрес строкой
-    """
-    result = [str(int(address[i:i + 2], 16)) for i in range(0, len(address), 2)]
-    return ".".join(result)
-
-def extaract_address(response, address):
-    """
-    Метод извлечения адреса из ответа
-    :param response: полный ответ от сервера
-    :param address: адрес или ссылка на него в 16тиричном формате
-    :return: адрес IPv4 в виде строки
-    """
-    valuable_bits = bin(int(address[:2], 16))[2:]
-    if  valuable_bits[:2] == '11':
-        link_str = valuable_bits[2:] + bin(int(address[2:], 16))[2:]
-        link_int = int(link_str,2)*2
-        print ('link')
-        address_start = response[link_int:]
-        end_address_mark = address_start.index('00')
-
-        name = decode_address(address_start[:end_address_mark])
-
-        return name
-    else:
-        print ("non-link")
-        name = decode_address(address)
-        return name
 
 def generate_id():
     all_keys = set(queries_db.keys())
