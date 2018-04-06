@@ -88,7 +88,7 @@ class Answer:
         self.CLASS = ""
         self.TTL = 0
         self.ADDRESS = ""
-        pass
+        self.SERVER_NAME=""
 
 
 
@@ -123,13 +123,12 @@ def decode_address(message):
     while (True):
         for i in range(result[start_pos]):
             result_str += chr(result[start_pos+i+1])
-        start_pos = len(result_str) + 1
+        result_str += '.'
+        start_pos = len(result_str)
         if (start_pos == len(result)) :
             break
-        else:
-            result_str += '.'
 
-    return result_str
+    return result_str[:-1]
 
 def generate_id():
     all_keys = set(queries_db.keys())
