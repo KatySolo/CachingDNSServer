@@ -2,6 +2,7 @@ import binascii
 import socket
 from task_2.database import queries_db,answers_db,domains_db
 import unicodedata
+from functools import reduce
 
 import re
 
@@ -11,6 +12,18 @@ dns_cache = []
 
 question_len = 0
 isFlag = False
+
+
+def add_new_address(link_int, new_address):
+    # parts = new_address.split('.')
+    # prev_part = ""
+    address = new_address
+    pointer = 0
+    while pointer+2 != len(new_address):
+        # address = address[pointer:]
+        domains_db[pointer*2+link_int] = address[pointer:]
+        next_addr = address[pointer:]
+        pointer = pointer + next_addr.find('.') + 1
 
 def extaract_address(response, address):
     """
@@ -37,6 +50,7 @@ def extaract_address(response, address):
             if link_int not in domains_db.keys():
                 end_address_mark = address_start.index('00')
                 new_address = decode_address(address_start[:end_address_mark])
+                # add_new_adress(link_int,new_address)
                 domains_db[link_int] = new_address
                 name.append(new_address)
             else:
@@ -160,7 +174,8 @@ def parse_response(response_data):
         answers_db.append(answer)
 
 try:
-    # response = send_dns_query("example.com", "8.8.8.8")
+    #response = send_dns_query("example.com", "8.8.8.8")
+    add_new_address(24,"www.e1.ru")
     response = send_dns_query('www.e1.ru', 'ns1.e1.ru')
     # print(response)
     # response = "000185000001000200040002" \
