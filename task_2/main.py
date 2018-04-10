@@ -1,6 +1,6 @@
 import binascii
 import socket
-from task_2.database import queries_db,answers_db
+from task_2.database import queries_db,answers_db,domains_db
 import unicodedata
 
 import re
@@ -8,6 +8,7 @@ import re
 from task_2.DNSPackage import DNSPackage, SuspiciousDNSError, Answer, decode_address
 
 dns_cache = []
+
 question_len = 0
 isFlag = False
 
@@ -32,11 +33,14 @@ def extaract_address(response, address):
 
             # todo i guess this end mark doesn't work all the time
             # todo case 036e6773 c00fc...
-            end_address_mark = address_start.index('00')
-            # else:
-            #     end_address_mark = None
-
-            name.append(decode_address(address_start[:end_address_mark]))
+            # end_address_mark = address_start.index('00')
+            if link_int not in domains_db.keys():
+                end_address_mark = address_start.index('00')
+                new_address = decode_address(address_start[:end_address_mark])
+                domains_db[link_int] = new_address
+                name.append(new_address)
+            else:
+                name.append(domains_db[link_int])
 
             address = address[4:]
         else:
@@ -116,7 +120,7 @@ def parse_response(response_data):
         answer = Answer()
         response_start = response_data[response_start_index:]
 
-        name_length = response_start.find('0001')
+        name_length = response_start.find('00')
         if (response_start[name_length + 4:].find('0001') != -1):
             name_length = response_start.find('0001',name_length+4)
 
@@ -125,9 +129,11 @@ def parse_response(response_data):
         answer.TYPE = int(name_end_index[:4],16)
         answer.CLASS= int(name_end_index [4:8],16)
         answer.TTL = int (name_end_index[8:16],16)
-        answer.ADDRESS = decode_ip_address(name_end_index[20:28])
+        if answer.TYPE != 5:
+            answer.ADDRESS = decode_ip_address(name_end_index[20:28])
         response_start_index = response_start_index+name_length+24
         answers_db.append(answer)
+
 
     # authoritative name servers
     for i in range(response.NSCOUNT):
@@ -155,7 +161,7 @@ def parse_response(response_data):
 
 try:
     # response = send_dns_query("example.com", "8.8.8.8")
-    response = send_dns_query('e1.ru', 'ns1.e1.ru')
+    response = send_dns_query('www.e1.ru', 'ns1.e1.ru')
     # print(response)
     # response = "000185000001000200040002" \
     # \

@@ -1,0 +1,12 @@
+Value	Meaning/Use
+++ x'0001 (1)	An A record for the domain name
+x'0002 (2)	A NS record( for the domain name
+x'0005 (5)	A CNAME record for the domain name
+x'0006 (6)	A SOA record for the domain name
+x'000B (11)	A WKS record(s) for the domain name
+x'000C (12)	A PTR record(s) for the domain name
+x'000F (15)	A MX record for the domain name
+x'0021 (33)	A SRV record(s) for the domain name
+++ x'001C (28)	An AAAA record(s) for the domain name
+
+http://www.zytrax.com/books/dns/ch15/#type
