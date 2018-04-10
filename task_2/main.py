@@ -15,11 +15,11 @@ isFlag = False
 
 
 def add_new_address(link_int, new_address):
-    # parts = new_address.split('.')
+    parts = new_address.split('.')
     # prev_part = ""
     address = new_address
     pointer = 0
-    while pointer+2 != len(new_address):
+    for i in parts:
         # address = address[pointer:]
         domains_db[pointer*2+link_int] = address[pointer:]
         next_addr = address[pointer:]
@@ -50,7 +50,7 @@ def extaract_address(response, address):
             if link_int not in domains_db.keys():
                 end_address_mark = address_start.index('00')
                 new_address = decode_address(address_start[:end_address_mark])
-                # add_new_adress(link_int,new_address)
+                add_new_address(link_int,new_address)
                 domains_db[link_int] = new_address
                 name.append(new_address)
             else:
@@ -150,16 +150,16 @@ def parse_response(response_data):
 
 
     # authoritative name servers
-    for i in range(response.NSCOUNT):
+    for i in range(response.NSCOUNT): #todo fix this section
         answer = Answer()
         response_start = response_data[response_start_index:]
 
-        name_length = response_start.find('0001')
+        # name_length = response_start.find('00')
         # if (response_start[name_length + 4:].find('0001') != -1):
         #     name_length = response_start.find('0001',name_length+4)
 
-        answer.NAME = extaract_address(response_data, response_start[:name_length - 4])
-        name_end_index = response_start[name_length-4:]
+        answer.NAME = extaract_address(response_data, response_start[:4])
+        name_end_index = response_start[4:]
         answer.TYPE = int(name_end_index[:4],16)
         answer.CLASS= int(name_end_index [4:8],16)
         answer.TTL = int (name_end_index[8:16],16)
