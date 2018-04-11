@@ -38,20 +38,13 @@ def extaract_address(response, address):
     :return: адрес IPv4 в виде строки
     """
     name = []
-    # test = "036e7331c00c"
     while (address):
-        # b = address[:2]
-        # a = bin(int(address[:2], 16))[2:].zfill(8)
         valuable_bits = bin(int(address[:2], 16))[2:].zfill(8)
         if  valuable_bits[:2] == '11':
             link_str = valuable_bits[2:] + bin(int(address[2:], 16))[2:]
             link_int = int(link_str,2)*2
             print ('link')
             address_start = response[link_int:]
-
-            # todo i guess this end mark doesn't work all the time
-            # todo case 036e6773 c00fc...
-            # end_address_mark = address_start.index('00')
             if link_int not in domains_db.keys():
                 end_address_mark = address_start.index('00')
                 new_address = decode_address(address_start[:end_address_mark])
@@ -63,12 +56,10 @@ def extaract_address(response, address):
 
             address = address[4:]
         else:
-            #todo add new address here
             print ("non-link")
             length = int(address[:2], 16)*2
             name.append(decode_address(address[:length+2]))
             address = address[length+2:]
-    # add_new_address()
     return '.'.join(name)
 
 def decode_ip_address(address):
@@ -101,21 +92,9 @@ def send_dns_query(message, address):
         sock.close()
     return binascii.hexlify(data).decode("utf-8")
 
-
-def resolve_address(server_name_codded):
-    test = "036e7331c00c"
-    # valuable_bits = bin(int(server_name_codded[:2], 16))[2:]
-    # if valuable_bits[:2] != '11':
-    #     ammount = int(server_name_codded[:2], 16)
-    #
-
-
-    pass
-
-
 def parse_response(response_data):
     """
-    Метод разблра ответа от DNS сервера
+    Метод разбора ответа от DNS сервера
     :param response_data: ответ от сервера в 16тиричном представлении
     :return: none
     """
@@ -132,8 +111,9 @@ def parse_response(response_data):
     response.ANCOUNT = int(response_data[12:16], 16)
     response.NSCOUNT = int(response_data[16:20], 16)
     response.ARCOUNT = int(response_data[20:24], 16)
-
+    response.createResponse()
     response.QUESTION = queries_db[response.ID]
+    response.QUERIES.append(response.QUESTION)
     response_start_index = 22 + response.QUESTION.getLength()
 
     # answers
@@ -153,11 +133,10 @@ def parse_response(response_data):
         if answer.TYPE != 5:
             answer.ADDRESS = decode_ip_address(name_end_index[20:28])
         response_start_index = response_start_index+name_length+24
-        answers_db.append(answer)
-
+        response.ANSWERS.append(answer)
 
     # authoritative name servers
-    for i in range(response.NSCOUNT): #todo fix case
+    for i in range(response.NSCOUNT):
         answer = Answer()
         response_start = response_data[response_start_index:]
 
@@ -170,40 +149,39 @@ def parse_response(response_data):
         answer.TYPE = int(name_end_index[:4],16)
         answer.CLASS= int(name_end_index [4:8],16)
         answer.TTL = int (name_end_index[8:16],16)
-        # todo check index for server name
         name_server_len = int (name_end_index[16:20],16)
         server_name_codded = name_end_index[20: 20+name_server_len*2]
         server_name_index = response_data.index(name_end_index[20:])
-        # print( response_data[server_name_index:])
         answer.SERVER_NAME = extaract_address(response_data,server_name_codded)
         add_new_address(server_name_index, answer.SERVER_NAME)
-        # answer.ADDRESS = decode_ip_address(name_end_index[20:28])
 
         response_start_index = response_start_index+len(server_name_codded)+24
-        # todo fix shift
-        answers_db.append(answer)
+        response.AUTHORITY_RECORDS.append(answer)
+
+    #additional records
+    for i in range(response.ARCOUNT):
+        answer = Answer()
+        response_start = response_data[response_start_index:]
+
+        answer.NAME = extaract_address(response_data, response_start[:4])
+        name_end_index = response_start[4:]
+        answer.TYPE = int(name_end_index[:4], 16)
+        answer.CLASS = int(name_end_index[4:8], 16)
+        answer.TTL = int(name_end_index[8:16], 16)
+
+        if answer.TYPE != 5:
+            answer.ADDRESS = decode_ip_address(name_end_index[20:28])
+        response_start_index = response_start_index + 8 + 24
+        response.ADDITIONAL_RECORDS.append(answer)
+    answers_db.append(response)
 
 try:
     #response = send_dns_query("example.com", "8.8.8.8")
     add_new_address(24,"www.e1.ru")
     response = send_dns_query('www.e1.ru', 'ns1.e1.ru')
-    # print(response)
-    # response = "000185000001000200040002" \
-    # \
-    #            "0265310272750000010001" \
-    # \
-    #            "c00c000100010000012c0004d4c1a306" \
-    #            "c00c000100010000012c0004d4c1a307" \
-    # \
-    #            "c00c000200010000012c0009026e73036e6773c00f" \
-    #            "c00c000200010000012c0006036e7331c00c" \
-    #            "c00c000200010000012c0006036e7332c00c" \
-    #            "c00c000200010000012c0006036e7332c046" \
-    # \
-    #            "c058000100010000012c0004d4c1a306" \
-    #            "c06a000100010000012c0004d4c1a307"
     parse_response(response)
-    print (answers_db)
+    a = 2
+    # print (answers_db)
 except OSError as e:
     print ('INTERNETA NETY')
 

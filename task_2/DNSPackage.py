@@ -16,6 +16,7 @@ class DNSPackage:
         self.NSCOUNT = None
         self.ARCOUNT = None
 
+
     def createQuery (self,message):
         self.ID = generate_id()
         self.QUERY_FLAGS = '01 00'
@@ -26,10 +27,6 @@ class DNSPackage:
 
         self.QUESTION_BLOCK = Question(message)
         queries_db[self.ID] = self.QUESTION_BLOCK
-        # self.QNAME = code_address(message)
-        # self.QTYPE = "00 01"
-        # self.QCLASS = "00 01"
-        # query_db.append((ID, {message: ""}))
 
         question = self.QUESTION_BLOCK.createQuestion()
         return "".join((self.ID, self.QUERY_FLAGS, self.QDCOUNT, self.ANCOUNT, self.NSCOUNT, self.ARCOUNT,question)).replace(" ", "")
@@ -42,31 +39,10 @@ class DNSPackage:
         return True
 
     def createResponse(self):
-        self.QUERIES = [{} for i in range(self.QDCOUNT)] # todo add Questions types
-        self.ANSWERS = [{} for i in range(self.ANCOUNT)]
-        self.AUTHORITY_RECORDS = [{} for i in range(self.NSCOUNT)]
-        self.ADDITIONAL_RECORDS = [{} for i in range(self.ARCOUNT)]
-
-        # for i in range(response.ANCOUNT):
-        #     response_start = response_data[question_fin + 8:]
-        #     # if response_start[:response_start.ndex('0001')] == "c0":
-        #     name_length = response_start.find('0001')
-        #     if (response_start[name_length + 4:].find('0001') != -1):
-        #         name_length = response_start.find('0001', name_length + 4)
-        #     # todo extract correctly name length (find second 0001 group)
-        #     RESPONSE_NAME = extaract_address(response_data, response_start[:name_length - 4])
-        #     print('name = ', RESPONSE_NAME)
-        #     name_end = response_start[name_length - 4:]
-        #     # print (response, RESPONSE_NAME, name_end)
-        #     TYPE = int(name_end[:4], 16)
-        #     print('type =', TYPE)
-        #     class_note = int(name_end[4:8], 16)
-        #     print('class=', class_note)
-        #     TTL = int(name_end[8:16], 16)
-        #     print('ttl=', TTL)
-        #     data_length = int(name_end[16:20], 16)
-        #     ADDRESS = decode_ip_address(name_end[20:28])
-        #     print('address = ', ADDRESS)
+        self.QUERIES = []
+        self.ANSWERS = []
+        self.AUTHORITY_RECORDS = []
+        self.ADDITIONAL_RECORDS = []
 
 class Question:
 
