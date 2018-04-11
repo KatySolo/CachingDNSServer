@@ -18,12 +18,17 @@ def add_new_address(link_int, new_address):
     parts = new_address.split('.')
     # prev_part = ""
     address = new_address
+    next_addr = new_address
+    domains = domains_db.values()
     pointer = 0
     for i in parts:
+        if not next_addr in domains:
         # address = address[pointer:]
-        domains_db[pointer*2+link_int] = address[pointer:]
-        next_addr = address[pointer:]
-        pointer = pointer + next_addr.find('.') + 1
+            domains_db[pointer*2+link_int] = address[pointer:]
+            pointer = pointer + next_addr.find('.') + 1
+            next_addr = address[pointer:]
+        else:
+            break
 
 def extaract_address(response, address):
     """
@@ -58,10 +63,12 @@ def extaract_address(response, address):
 
             address = address[4:]
         else:
+            #todo add new address here
             print ("non-link")
             length = int(address[:2], 16)*2
             name.append(decode_address(address[:length+2]))
             address = address[length+2:]
+    # add_new_address()
     return '.'.join(name)
 
 def decode_ip_address(address):
@@ -150,7 +157,7 @@ def parse_response(response_data):
 
 
     # authoritative name servers
-    for i in range(response.NSCOUNT): #todo fix this section
+    for i in range(response.NSCOUNT): #todo fix case
         answer = Answer()
         response_start = response_data[response_start_index:]
 
@@ -166,7 +173,10 @@ def parse_response(response_data):
         # todo check index for server name
         name_server_len = int (name_end_index[16:20],16)
         server_name_codded = name_end_index[20: 20+name_server_len*2]
+        server_name_index = response_data.index(name_end_index[20:])
+        # print( response_data[server_name_index:])
         answer.SERVER_NAME = extaract_address(response_data,server_name_codded)
+        add_new_address(server_name_index, answer.SERVER_NAME)
         # answer.ADDRESS = decode_ip_address(name_end_index[20:28])
 
         response_start_index = response_start_index+len(server_name_codded)+24
