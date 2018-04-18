@@ -1,9 +1,14 @@
 import binascii
+import json
+import os
+import pickle
 import socket
 import threading
 import time
 
-from task_2.DNSPackage import DNSPackage, SuspiciousDNSError, Answer, decode_address
+import sys
+
+from task_2.DNSPackage import DNSPackage, SuspiciousDNSError, Answer, decode_address, CustomEncoder, decoder
 from task_2.database import queries_db, cache, domains_db, answers_db
 
 
@@ -108,7 +113,7 @@ def parse_response(response_data):
     response.createResponse()
     response.QUESTION = queries_db[response.ID]
     response.QUERIES.append(response.QUESTION)
-    response_start_index = 22 + response.QUESTION.getLength()
+    response_start_index = 24 + response.QUESTION.getLength()
 
     # answers
     for i in range(response.ANCOUNT):
@@ -188,11 +193,29 @@ def start_ttl_observer():
     pass
 
 
-try:
-    #response = send_dns_query("example.com", "8.8.8.8")
-    response = send_dns_query('www.e1.ru', 'ns1.e1.ru')
-    start_ttl_observer()
-    parse_response(response)
-    a = 2
-except OSError as e:
-    print('INTERNETA NETY')
+def saving_cache():
+    print('Saving cache and quiting...')
+    with open('./cache.txt', 'w') as file:
+        json.dump(cache, file, cls=CustomEncoder)
+    with open('./cache.txt', 'r') as file:
+        a = json.load(file, object_hook=decoder)
+
+
+if __name__ == "__main__":
+    try:
+        print('Start caching DNS server...')
+        server = input ("Server: ")
+        address = input("Address: ")
+        # check input here for emptyness
+        a = ''
+        while True:
+            response = send_dns_query('www.e1.ru', 'ns1.e1.ru')
+        # start_ttl_observer()
+            parse_response(response)
+            print ('OK 200')
+            next_action = input("Continue?[N] <Y/N> ")
+            if next_action.lower() == 'n' or not next_action:
+                saving_cache()
+                break
+    except :
+        print ('no internet')

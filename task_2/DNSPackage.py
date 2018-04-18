@@ -1,4 +1,7 @@
 import binascii
+import json
+from json import JSONEncoder
+
 from task_2.database import queries_db
 
 
@@ -45,11 +48,14 @@ class DNSPackage:
         self.ADDITIONAL_RECORDS = []
 
 class Question:
+    def __init__(self, message, qtype = "0001", qclass = "0001"):
+        if not message.isdigit():
+            self.QNAME = code_address(message)
+        else:
+            self.QNAME = message
+        self.QTYPE = qtype # todo make for a various types (etc. A, NS, AAAA and so on...)
+        self.QCLASS = qclass
 
-    def __init__(self, message):
-        self.QNAME = code_address(message)
-        self.QTYPE = "00 01" # todo make for a various types (etc. A, NS, AAAA and so on...)
-        self.QCLASS = "00 01"
 
     def createQuestion(self):
         return "".join((self.QNAME, self.QTYPE, self.QCLASS))
@@ -57,14 +63,32 @@ class Question:
     def getLength(self):
         return len(self.QNAME + self.QTYPE + self.QCLASS)
 
+
+
 class Answer:
-    def __init__(self):
-        self.NAME = ""
-        self.TYPE = ""
-        self.CLASS = ""
-        self.TTL = 0
-        self.ADDRESS = ""
-        self.SERVER_NAME=""
+    def __init__(self, name='', type='', cclass='', ttl=0, address='', sname = ''):
+        self.NAME = name
+        self.TYPE = type
+        self.CLASS = cclass
+        self.TTL = ttl
+        self.ADDRESS = address
+        self.SERVER_NAME= sname
+
+
+class CustomEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, Question):
+            return {'question': o.__dict__}
+        if isinstance(o, Answer):
+            return {'answer': o.__dict__}
+        return {'__{}__'.format(o.__class__.__name__): o.__dict__}
+
+def decoder(dct):
+    if 'QNAME' in dct:
+        return Question(dct['QNAME'],dct['QTYPE'], dct['QCLASS'])
+    elif 'TTL' in dct:
+        return Answer(dct['NAME'],dct['TYPE'], dct['CLASS'],dct['TTL'],dct['ADDRESS'],dct['SERVER_NAME'])
+    return dct
 
 
 
