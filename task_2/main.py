@@ -204,8 +204,8 @@ def saving_cache():
 if __name__ == "__main__":
     try:
         print('Start caching DNS server...')
-        server = input ("Server: ")
-        address = input("Address: ")
+        # server = input ("Server: ")
+        # address = input("Address: ")
         # check input here for emptyness
         a = ''
         while True:
@@ -217,5 +217,6 @@ if __name__ == "__main__":
             if next_action.lower() == 'n' or not next_action:
                 saving_cache()
                 break
-    except :
+    except OSError as e:
+        # collect from cache
         print ('no internet')
