@@ -74,6 +74,15 @@ class Answer:
         self.ADDRESS = address
         self.SERVER_NAME= sname
 
+    def __str__(self):
+        if self.TYPE == 5:
+            return 'Canonical name: '+ self.NAME #todo fix here cname
+        elif self.TYPE == 1:
+            return 'Name:\t'+self.NAME+'\nAddress: '+self.ADDRESS
+        elif self.TYPE == 2:
+            return 'Server name: '+ self.SERVER_NAME
+        else:
+            return 'Unparceble variant'
 
 class CustomEncoder(json.JSONEncoder):
     def default(self, o):
@@ -132,4 +141,7 @@ def decode_address(message):
 
 def generate_id():
     all_keys = set(queries_db.keys())
-    return str(hex(max(all_keys) + 1))[2:].zfill(4)
+    if all_keys:
+        return str(hex(max(all_keys) + 1))[2:].zfill(4)
+    else:
+        return str(hex(1))[2:].zfill(4)

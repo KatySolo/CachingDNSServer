@@ -8,7 +8,8 @@ import time
 
 import sys
 
-from task_2.DNSPackage import DNSPackage, SuspiciousDNSError, Answer, decode_address, CustomEncoder, decoder
+from task_2.DNSPackage import DNSPackage, SuspiciousDNSError, Answer, decode_address, CustomEncoder, decoder, \
+    code_address
 from task_2.database import queries_db, cache, domains_db, answers_db
 
 
@@ -93,6 +94,7 @@ def send_dns_query(message, address):
 
 def parse_response(response_data):
     """
+
     Метод разбора ответа от DNS сервера
     :param response_data: ответ от сервера в 16тиричном представлении
     :return: none
@@ -131,13 +133,17 @@ def parse_response(response_data):
         answer.TTL = int(name_end_index[8:16], 16)
         if answer.TYPE != 5:
             answer.ADDRESS = decode_ip_address(name_end_index[20:28])
-        response_start_index = response_start_index + name_length + 24
+            response_start_index = response_start_index + name_length - 4 + 28
+        else:
+            # answer.CNAME = extaract_address(response_data,name_end_index[20:28])
+            response_start_index = response_start_index + name_length-4 + 24
+        a = response_data[response_start_index:]
         response.ANSWERS.append(answer)
 
-        if answer.TTL in answers_db.keys():
-            answers_db[answer.TTL].append(answer)
+        if response.ID in answers_db.keys():
+            answers_db[response.ID].append(answer)
         else:
-            answers_db[answer.TTL] = [answer]
+            answers_db[response.ID] = [answer]
 
     # authoritative name servers
     for i in range(response.NSCOUNT):
@@ -158,10 +164,8 @@ def parse_response(response_data):
         response_start_index = response_start_index + len(server_name_codded) + 24
         response.AUTHORITY_RECORDS.append(answer)
 
-        if answer.TTL in answers_db.keys():
-            answers_db[answer.TTL].append(answer)
-        else:
-            answers_db[answer.TTL] = [answer]
+        # answers_db.append(answer)
+        answers_db[response.ID].append(answer)
 
     # additional records
     for i in range(response.ARCOUNT):
@@ -179,11 +183,13 @@ def parse_response(response_data):
         response_start_index = response_start_index + 8 + 24
         response.ADDITIONAL_RECORDS.append(answer)
 
-        if answer.TTL in answers_db.keys():
-            answers_db[answer.TTL].append(answer)
-        else:
-            answers_db[answer.TTL] = [answer]
-    cache.append(response)
+        answers_db[response.ID].append(answer)
+        # if answer.TTL in answers_db.keys():
+        #     answers_db[answer.TTL].append(answer)
+        # else:
+        #     answers_db[answer.TTL] = [answer]
+    # cache[response.ID] = response
+    # cache.append(response)
 
 
 def start_ttl_observer():
@@ -195,21 +201,33 @@ def start_ttl_observer():
 
 def saving_cache():
     print('Saving cache and quiting...')
-    with open('./cache.txt', 'w') as file:
-        json.dump(cache, file, cls=CustomEncoder)
-    with open('./cache.txt', 'r') as file:
-        a = json.load(file, object_hook=decoder)
+    with open('./cache/queries_cache.txt', 'w') as file:
+        json.dump(queries_db, file, cls=CustomEncoder)
+    with open('./cache/answers_cache.txt', 'w') as file:
+        json.dump(answers_db, file, cls=CustomEncoder)
 
+def getting_cache():
+    a = ''
+    b = ''
+    with open('./cache/queries_cache.txt', 'r') as file1:
+        a = json.load(file1, object_hook=decoder)
+    with open('./cache/answers_cache.txt', 'r') as file2:
+        b = json.load(file2, object_hook=decoder)
+    return a,b
 
 if __name__ == "__main__":
     try:
         print('Start caching DNS server...')
         # server = input ("Server: ")
-        # address = input("Address: ")
-        # check input here for emptyness
+        address = input("Address: ")
+        raise OSError
+        # # check input here for emptynessw
+        # print ("Checking connection...")
+        # time.sleep(2)
         a = ''
         while True:
             response = send_dns_query('www.e1.ru', 'ns1.e1.ru')
+            print ('Connected')
         # start_ttl_observer()
             parse_response(response)
             print ('OK 200')
@@ -217,6 +235,25 @@ if __name__ == "__main__":
             if next_action.lower() == 'n' or not next_action:
                 saving_cache()
                 break
+            else:
+                address = input("Address: ")
+
     except OSError as e:
         # collect from cache
-        print ('no internet')
+        print ("Using offline cache data.")
+        cached_queries, cached_answers = getting_cache()
+        query_id = ''
+        searching_addr = code_address(address)
+        try:
+            for packet in cached_queries.items():
+                question_coded_name = packet[1]['question'].QNAME
+                if searching_addr == question_coded_name:
+                    query_id = packet[0]
+                    print ('Found question')
+                    break
+            for i in cached_answers[query_id]:
+                print(i['answer'])
+        except KeyError:
+            print ('Cache miss')
+
+#todo ttl clean-up

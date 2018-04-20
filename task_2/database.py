@@ -1,5 +1,7 @@
-queries_db = {0:None}
-cache = []
-domains_db = {0:None}
-answers_db = {0:[]}
+from collections import OrderedDict
+
+queries_db = OrderedDict()
+cache = OrderedDict()
+domains_db = OrderedDict()
+answers_db = OrderedDict()
 #todo not for multiply queries
