@@ -142,6 +142,6 @@ def decode_address(message):
 def generate_id():
     all_keys = set(queries_db.keys())
     if all_keys:
-        return str(hex(max(all_keys) + 1))[2:].zfill(4)
+        return str(hex(max(map(lambda x: int(x),all_keys)) + 1))[2:].zfill(4)
     else:
         return str(hex(1))[2:].zfill(4)

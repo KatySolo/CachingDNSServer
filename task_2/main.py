@@ -177,19 +177,6 @@ def parse_response(response_data):
         response.ADDITIONAL_RECORDS.append(answer)
 
         answers_db[response.ID].append(answer)
-        # if answer.TTL in answers_db.keys():
-        #     answers_db[answer.TTL].append(answer)
-        # else:
-        #     answers_db[answer.TTL] = [answer]
-        # cache[response.ID] = response
-        # cache.append(response)
-
-
-def start_ttl_observer():
-    # notify when time for TTL in expired
-    start_time = time.time() % 60
-    print(start_time)
-    pass
 
 
 def saving_cache():
@@ -211,19 +198,20 @@ def getting_cache():
 
 
 if __name__ == "__main__":
+    server = ''
+    address =''
     try:
         print('Start caching DNS server...')
-        # server = input ("Server: ")
+        server = input ("Server: ")
         address = input("Address: ")
-        raise OSError
+        # raise OSError
         # # check input here for emptynessw
         # print ("Checking connection...")
         # time.sleep(2)
         a = ''
         while True:
-            response = send_dns_query('www.e1.ru', 'ns1.e1.ru')
+            response = send_dns_query(address, server)
             print('Connected')
-            # start_ttl_observer()
             parse_response(response)
             print('OK 200')
             next_action = input("Continue?[N] <Y/N> ")
