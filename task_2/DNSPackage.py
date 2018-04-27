@@ -7,6 +7,8 @@ from task_2.database import queries_db
 
 class SuspiciousDNSError (Exception):
     pass
+class UnsupportedQueryException(Exception):
+    pass
 
 
 class DNSPackage:
@@ -20,26 +22,28 @@ class DNSPackage:
         self.ARCOUNT = None
 
 
-    def createQuery (self,message):
+    def createQuery (self,message, type):
         self.ID = generate_id()
+        # self.ID = '0001'
         self.QUERY_FLAGS = '01 00'
-        self.QDCOUNT = "00 01" # todo think about case of multiply questions(??)
+        self.QDCOUNT = "00 01"
         self.ANCOUNT = "00 00"
         self.NSCOUNT = "00 00"
         self.ARCOUNT = "00 00"
 
-        self.QUESTION_BLOCK = Question(message)
-        queries_db[self.ID] = self.QUESTION_BLOCK
+        self.QUESTION_BLOCK = Question(message,type)
+        # queries_db[(message, type)] = []
+        # queries_db[self.ID] = self.QUESTION_BLOCK
 
         question = self.QUESTION_BLOCK.createQuestion()
         return "".join((self.ID, self.QUERY_FLAGS, self.QDCOUNT, self.ANCOUNT, self.NSCOUNT, self.ARCOUNT,question)).replace(" ", "")
 
-    def checkResponseValidity(self, id):
-        try:
-            self.QUESTION = queries_db[id]
-        except LookupError as e:
-            return False
-        return True
+    # def checkResponseValidity(self, id):
+    #     try:
+    #         self.QUESTION = queries_db[id]
+    #     except LookupError as e:
+    #         return False
+    #     return True
 
     def createResponse(self):
         self.QUERIES = []
@@ -47,13 +51,34 @@ class DNSPackage:
         self.AUTHORITY_RECORDS = []
         self.ADDITIONAL_RECORDS = []
 
+    def __str__(self):
+        return 'this is answer'
+
+
+def select_type(qtype):
+    if qtype == 'A':
+        return '0001'
+    elif qtype == 'NS':
+        return '0002'
+    elif qtype == "SOA":
+        return '0006'
+    elif qtype == 'CNAME':
+        return '0005'
+    else:
+        raise UnsupportedQueryException
+
+
 class Question:
     def __init__(self, message, qtype = "0001", qclass = "0001"):
         if not message.isdigit():
             self.QNAME = code_address(message)
         else:
             self.QNAME = message
-        self.QTYPE = qtype # todo make for a various types (etc. A, NS, AAAA and so on...)
+        try:
+            self.QTYPE = select_type(qtype)
+        except UnsupportedQueryException:
+            print ('!!!Unsupported query!!!Regular query will be send')
+            self.QTYPE = "0001"
         self.QCLASS = qclass
 
 
@@ -140,8 +165,10 @@ def decode_address(message):
     return result_str[:-1]
 
 def generate_id():
-    all_keys = set(queries_db.keys())
-    if all_keys:
-        return str(hex(max(map(lambda x: int(x),all_keys)) + 1))[2:].zfill(4)
-    else:
-        return str(hex(1))[2:].zfill(4)
+    current_num = len(queries_db)
+    return str(current_num+ 1).zfill(4)
+    # all_keys = set(queries_db.keys())
+    # if all_keys:
+    #     return str(hex(max(map(lambda x: int(x),all_keys)) + 1))[2:].zfill(4)
+    # else:
+    #     return str(hex(1))[2:].zfill(4)

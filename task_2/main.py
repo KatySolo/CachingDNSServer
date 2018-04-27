@@ -4,7 +4,7 @@ import socket
 import time
 
 from task_2.DNSPackage import DNSPackage, SuspiciousDNSError, Answer, decode_address, CustomEncoder, decoder, \
-    code_address
+    code_address, Question
 from task_2.database import queries_db, domains_db, answers_db
 
 
@@ -65,7 +65,7 @@ def decode_ip_address(address):
     return ".".join(result)
 
 
-def send_dns_query(message, address):
+def send_dns_query(message, address, type):
     """
     Метод для отсылки DNS запроса
     :param message: искомый адрес
@@ -73,7 +73,13 @@ def send_dns_query(message, address):
     :return: полученный от DNS сервера ответ
     """
 
-    query = DNSPackage().createQuery(message)
+    query = DNSPackage().createQuery(message, type)
+    if (message, type) in queries_db.keys():
+        return queries_db[(message, type)]
+    else:
+        queries_db[(message, type)] = []
+
+    # check if cache contains this query
     server_address = (address, 53)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -85,7 +91,7 @@ def send_dns_query(message, address):
     return binascii.hexlify(data).decode("utf-8")
 
 
-def parse_response(response_data):
+def parse_response(response_data, address, qtype):
     """
 
     Метод разбора ответа от DNS сервера
@@ -94,10 +100,10 @@ def parse_response(response_data):
     """
     id = response_data[:4]
     response = DNSPackage()
-    validResponse = response.checkResponseValidity(id)
-
-    if not validResponse:
-        raise SuspiciousDNSError("Suspicious response. Probably, server was hacked.")
+    # validResponse = response.checkResponseValidity(id)
+    #
+    # if not validResponse:
+    #     raise SuspiciousDNSError("Suspicious response. Probably, server was hacked.")
 
     response.ID = id
     response.FLAGS = response_data[4:8]
@@ -106,10 +112,11 @@ def parse_response(response_data):
     response.NSCOUNT = int(response_data[16:20], 16)
     response.ARCOUNT = int(response_data[20:24], 16)
     response.createResponse()
-    response.QUESTION = queries_db[response.ID]
-    response.QUERIES.append(response.QUESTION)
+    response.QUESTION = Question(address,qtype)
+    #response.QUERIES.append(response.QUESTION)
     response_start_index = 24 + response.QUESTION.getLength()
 
+    # answers_db[response.ID] = []
     # answers
     for i in range(response.ANCOUNT):
         answer = Answer()
@@ -133,10 +140,10 @@ def parse_response(response_data):
         a = response_data[response_start_index:]
         response.ANSWERS.append(answer)
 
-        if response.ID in answers_db.keys():
-            answers_db[response.ID].append(answer)
-        else:
-            answers_db[response.ID] = [answer]
+        # if response.ID in answers_db.keys():
+        #     answers_db[response.ID].append(answer)
+        # else:
+        #     answers_db[response.ID] = [answer]
 
     # authoritative name servers
     for i in range(response.NSCOUNT):
@@ -158,7 +165,7 @@ def parse_response(response_data):
         response.AUTHORITY_RECORDS.append(answer)
 
         # answers_db.append(answer)
-        answers_db[response.ID].append(answer)
+        # answers_db[response.ID].append(answer)
 
     # additional records
     for i in range(response.ARCOUNT):
@@ -175,8 +182,12 @@ def parse_response(response_data):
             answer.ADDRESS = decode_ip_address(name_end_index[20:28])
         response_start_index = response_start_index + 8 + 24
         response.ADDITIONAL_RECORDS.append(answer)
+        # answers_db[response.ID].append(answer)
 
-        answers_db[response.ID].append(answer)
+    queries_db[(address,type)] = response
+    # for i in answers_db[response.ID]:
+    #     print(i)
+    # print (answers_db[response.ID])
 
 
 def saving_cache():
@@ -198,52 +209,65 @@ def getting_cache():
 
 
 if __name__ == "__main__":
-    server = ''
-    address =''
+    server = 'ns1.e1.ru'
+    address ='www.e1.ru'
+    type = 'NS'
     try:
         print('Start caching DNS server...')
-        server = input ("Server: ")
-        address = input("Address: ")
-        # raise OSError
-        # # check input here for emptynessw
-        # print ("Checking connection...")
-        # time.sleep(2)
-        a = ''
-        while True:
-            response = send_dns_query(address, server)
-            print('Connected')
-            parse_response(response)
-            print('OK 200')
-            next_action = input("Continue?[N] <Y/N> ")
-            if next_action.lower() == 'n' or not next_action:
-                saving_cache()
-                break
-            else:
-                address = input("Address: ")
+        # server = input ("Server: ")
+        # address = input("Address: ")
+        # type = input('Query type: ')
 
+
+    #     # raise OSError
+    #     # # check input here for emptynessw
+    #     # print ("Checking connection...")
+    #     # time.sleep(2)
+    #     a = ''
+    #     while True:
+        response = send_dns_query(address, server, type)
+        if isinstance(response, str):
+            print ('got unparsed response from server')
+            parse_response(response, address, type)
+        else:
+            print ('got answers')
+    #         print('Connected')
+    #         parse_response(response)
+    #         print('OK 200')
+    #         next_action = input("Continue?[N] <Y/N> ")
+    #         if next_action.lower() == 'n' or not next_action:
+    #             saving_cache()
+    #             break
+    #         else:
+    #             address = input("Address: ")
+    #
     except OSError as e:
-        # collect from cache
-        print("Using offline cache data.")
-        cached_queries, cached_answers = getting_cache()
-        query_id = ''
-        searching_addr = code_address(address)
-        try:
-            for packet in cached_queries.items():
-                question_coded_name = packet[1]['question'].QNAME
-                if searching_addr == question_coded_name:
-                    query_id = packet[0]
-                    print('\n---Answers---\n')
-                    break
-            flag_ns = True
-            flag_ar = True
-
-            for i in range(len(cached_answers[query_id])):
-                # for i in cached_answers[query_id]:
-                if flag_ns and cached_answers[query_id][i]['answer'].TYPE == 2:
-                    print('\n---Authoritative nameservers and addresses---\n')
-                    flag_ns = False
-                print(cached_answers[query_id][i]['answer'])
-        except KeyError:
-            print('Cache miss')
+        pass
+    #     # collect from cache
+    #     print("Using offline cache data.")
+    #     cached_queries, cached_answers = getting_cache()
+    #     query_id = ''
+    #     searching_addr = code_address(address)
+    #     try:
+    #         for packet in cached_queries.items():
+    #             question_coded_name = packet[1]['question'].QNAME
+    #             if searching_addr == question_coded_name:
+    #                 query_id = packet[0]
+    #                 print('\n---Answers---\n')
+    #                 break
+    #         flag_ns = True
+    #         flag_ar = True
+    #
+    #         for i in range(len(cached_answers[query_id])):
+    #             # for i in cached_answers[query_id]:
+    #             if flag_ns and cached_answers[query_id][i]['answer'].TYPE == 2:
+    #                 print('\n---Authoritative nameservers and addresses---\n')
+    #                 flag_ns = False
+    #             print(cached_answers[query_id][i]['answer'])
+    #     except KeyError:
+    #         print('Cache miss')
 
 # todo ttl clean-up
+
+#{(address,type):(answer)}
+
